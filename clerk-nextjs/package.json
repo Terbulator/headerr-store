@@ -1,5 +1,5 @@
 {
-  "name": "headerr",
+  "name": "clerk-nextjs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,15 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.17",
-    "@uploadthing/react": "^7.3.3",
-    "framer-motion": "^12.42.2",
-    "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "uploadthing": "^7.7.4",
-    "zustand": "^5.0.14"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -28,10 +22,5 @@
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "allowScripts": {
-    "sharp@0.34.5": true,
-    "unrs-resolver@1.12.2": true,
-    "msgpackr-extract@3.0.4": true
   }
 }
