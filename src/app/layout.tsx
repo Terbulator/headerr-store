@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
-import Navbar from "@/components/layout/Navbar"; // <-- 1. Import the Navbar
+import Navbar from "@/components/layout/Navbar";
+import { ClerkProvider } from "@clerk/nextjs"; // <-- 1. Import Clerk
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,14 +18,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <CartProvider>
-          {/* 2. Place the Navbar above your pages */}
-          <Navbar /> 
-          {children}
-        </CartProvider>
-      </body>
-    </html>
+    // 2. Wrap the entire app in the ClerkProvider
+    <ClerkProvider>
+      <html lang="en">
+        <body className={inter.className}>
+          <CartProvider>
+            <Navbar />
+            {children}
+          </CartProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
