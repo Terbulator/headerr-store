@@ -17,21 +17,23 @@ export default function CategoriesPage() {
 
   const addCategory = async () => {
   if (!newCat) return;
-  
-  try {
-    const { error } = await supabase
-      .from("categories")
-      .insert({ name: newCat });
 
-    if (error) {
-      console.error("Supabase Error:", error);
-      alert("Error adding category: " + error.message);
-    } else {
-      setNewCat("");
-      loadCategories();
-    }
-  } catch (err) {
-    console.error("Unexpected error:", err);
+  // Generate a slug from the name (e.g., "Men's Jerseys" -> "mens-jerseys")
+  const slug = newCat.toLowerCase().trim().replace(/\s+/g, '-');
+
+  const { error } = await supabase
+    .from("categories")
+    .insert({ 
+      name: newCat, 
+      slug: slug // We now include the slug here!
+    });
+
+  if (error) {
+    console.error("Supabase Error:", error);
+    alert("Error adding category: " + error.message);
+  } else {
+    setNewCat("");
+    loadCategories();
   }
 };
 
