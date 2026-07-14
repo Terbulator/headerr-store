@@ -15,13 +15,13 @@ const containerVariants: Variants = {
   },
 };
 
-const itemVariants: Variants = {
+const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
     y: 0, 
-    transition: { type: "spring", stiffness: 100 } 
-  },
+    transition: { type: "spring" as const, stiffness: 100 } // <-- Add "as const" here
+  }
 };
 
 export default function Home() {
