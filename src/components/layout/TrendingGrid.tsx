@@ -49,8 +49,13 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50 } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    // ADD 'as const' RIGHT HERE 👇
+    transition: { type: "spring" as const, stiffness: 100 } 
+  }
 };
 
 export default function TrendingGrid() {
