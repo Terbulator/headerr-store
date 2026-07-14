@@ -3,12 +3,17 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Define the shape of our data
+// Define the shape of our data
 type CartItem = {
   id: number;
   name: string;
   price: number;
   image: string;
   quantity: number;
+  sizes?: string;       // <-- Added this
+  sleeve_type?: string; // <-- Added this
+  club?: string;        // <-- Added this
+  category?: string;    // <-- Added this
 };
 
 type CartContextType = {
