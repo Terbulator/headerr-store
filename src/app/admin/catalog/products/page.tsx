@@ -25,6 +25,32 @@ type Product = {
 };
 
 export default function ProductsPage() {
+    // --- ADD THESE STATES ---
+const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+const [collections, setCollections] = useState<{id: string, name: string}[]>([]);
+
+// --- UPDATE YOUR FETCH LOGIC ---
+useEffect(() => {
+  const loadInitialData = async () => {
+    // 1. Fetch Products
+    const { data: prodData } = await supabase.from("products").select("*");
+    setProducts(prodData || []);
+    
+    // 2. Fetch Dropdown Data & DEBUG
+    const { data: catData, error: catError } = await supabase.from("categories").select("*");
+    const { data: colData, error: colError } = await supabase.from("collections").select("*");
+    
+    console.log("Categories from DB:", catData);
+    console.log("Collections from DB:", colData);
+    
+    if (catError) console.error("Cat Error:", catError);
+    if (colError) console.error("Col Error:", colError);
+    
+    setCategories(catData || []);
+    setCollections(colData || []);
+  };
+  loadInitialData();
+}, []);
   // 2. STATE MANAGEMENT
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -351,33 +377,35 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Organization */}
-            <div className="bg-[#111111] border border-white/10 rounded-xl p-6 space-y-4">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Organization</h2>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Category</label>
-                <select 
-                  value={formData.category || ""}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-[#080808] border border-white/10 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-[#FFD400]"
-                >
-                  <option value="">Select Category...</option>
-                  <option value="Jerseys">Jerseys</option>
-                  <option value="Boots">Boots</option>
-                  <option value="Accessories">Accessories</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Collection</label>
-                <input 
-                  type="text" 
-                  value={formData.collection || ""}
-                  onChange={(e) => setFormData({...formData, collection: e.target.value})}
-                  placeholder="e.g. Summer 2024"
-                  className="w-full bg-[#080808] border border-white/10 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-[#FFD400]"
-                />
-              </div>
-            </div>
+            {/* --- CATEGORY SELECTOR --- */}
+<div className="space-y-2">
+  <label className="text-sm text-gray-400">Category</label>
+  <select 
+    className="w-full bg-[#080808] border border-white/10 p-3 text-white rounded focus:border-[#FFD400] outline-none"
+    value={formData.category || ""}
+    onChange={e => setFormData({...formData, category: e.target.value})}
+  >
+    <option value="">Select a Category</option>
+    {categories.map((c) => (
+      <option key={c.id} value={c.name}>{c.name}</option>
+    ))}
+  </select>
+</div>
+
+{/* --- COLLECTION SELECTOR --- */}
+<div className="space-y-2">
+  <label className="text-sm text-gray-400">Collection</label>
+  <select 
+    className="w-full bg-[#080808] border border-white/10 p-3 text-white rounded focus:border-[#FFD400] outline-none"
+    value={formData.collection || ""}
+    onChange={e => setFormData({...formData, collection: e.target.value})}
+  >
+    <option value="">Select a Collection</option>
+    {collections.map((c) => (
+      <option key={c.id} value={c.name}>{c.name}</option>
+    ))}
+  </select>
+</div>
 
             {/* Variants */}
             <div className="bg-[#111111] border border-white/10 rounded-xl p-6">
