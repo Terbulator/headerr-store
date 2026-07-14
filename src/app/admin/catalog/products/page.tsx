@@ -228,33 +228,44 @@ export default function ProductsPage() {
         type="file" 
         className="hidden"
         accept="image/*" 
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
+ onChange={async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-          // 1. Upload file to Supabase Storage
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          
-          const { data, error } = await supabase.storage
-            .from('product-images')
-            .upload(fileName, file);
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random()}.${fileExt}`;
+  
+  // 1. Manually build the upload URL
+  const uploadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/product-images/${fileName}`;
 
-          if (error) {
-            alert("Upload failed: " + error.message);
-            return;
-          }
+  try {
+    // 2. Perform a raw HTTP POST (No SDK baggage)
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+        'Content-Type': file.type,
+      },
+      body: file,
+    });
 
-          // 2. Get Public URL
-          const { data: publicUrlData } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(fileName);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Upload failed");
+    }
 
-          // 3. Update form state
-          setFormData({...formData, image_url: publicUrlData.publicUrl});
-          alert("Image uploaded successfully!");
-        }}
-      />
+    // 3. Construct the public URL manually
+    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${fileName}`;
+    
+    setFormData({...formData, image_url: publicUrl});
+    alert("Image uploaded successfully!");
+
+  } catch (err: any) {
+    console.error("Upload error:", err);
+    alert("Upload failed: " + err.message);
+  }
+}} />
     </label>
     <p className="text-xs text-gray-500 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
   </div>
