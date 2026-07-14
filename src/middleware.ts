@@ -1,14 +1,15 @@
 // @ts-ignore
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export default clerkMiddleware((auth: any, req: any) => {
-  // Dead-simple check: If the URL contains /admin, lock the door.
+// 1. ADD THIS LINE: Force Vercel to bypass the Edge network
+export const runtime = 'nodejs';
+
+export default clerkMiddleware(async (auth: any, req: any) => {
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    auth().protect();
+    await auth.protect(); 
   }
 });
 
 export const config = {
-  // A much simpler, standard Next.js matcher
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
