@@ -1,0 +1,26 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+// We are using PostgreSQL as our database
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// The blueprint for a HEADERR Product
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Int      // Stored as an integer (e.g., 8999)
+  category    String
+  description String   @db.Text
+  image       String   // URL to the image
+  isNew       Boolean  @default(false)
+  sizes       String[] // Array of available sizes like ["S", "M", "L"]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
