@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   Plus, Search, Filter, MoreHorizontal, Edit, Trash2, 
-  Image as ImageIcon, ArrowLeft, Check, X, AlertCircle 
+  Image as ImageIcon, ArrowLeft, Check, X, AlertCircle, RefreshCw 
 } from "lucide-react";
+// 1. IMPORT SUPABASE (Adjust the path if your utils folder is somewhere else)
+import { supabase } from "@/utils/supabase"; 
 
-// --- TYPES & DUMMY DATA ---
+// --- TYPES ---
 type Product = {
   id: string;
   name: string;
@@ -18,72 +20,45 @@ type Product = {
   sizes: string[];
   category: string;
   collection: string;
-  image: string;
+  image_url: string; // Changed to match Supabase schema
   status: "Active" | "Draft" | "Out of Stock";
 };
 
-const initialProducts: Product[] = [
-  {
-    id: "PROD-001",
-    name: "MBSG Home Kit 24/25",
-    description: "Official Mohun Bagan Super Giant home jersey for the 2024/25 season. Premium moisture-wicking fabric.",
-    mrp: 5999,
-    price: 4999,
-    sku: "MBSG-HM-24",
-    inventory: 145,
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    category: "Jerseys",
-    collection: "Indian Super League",
-    image: "https://via.placeholder.com/150/080808/FFD400?text=MBSG",
-    status: "Active",
-  },
-  {
-    id: "PROD-002",
-    name: "Argentina Away Jersey 2024",
-    description: "Player-issue away kit featuring gold accents and the 3-star crest.",
-    mrp: 6999,
-    price: 5499,
-    sku: "ARG-AW-24",
-    inventory: 0,
-    sizes: ["M", "L", "XL"],
-    category: "Jerseys",
-    collection: "National Teams",
-    image: "https://via.placeholder.com/150/080808/FFFFFF?text=ARG",
-    status: "Out of Stock",
-  },
-  {
-    id: "PROD-003",
-    name: "Real Madrid Third Kit",
-    description: "Charcoal black third kit with subtle embossing and yellow trim.",
-    mrp: 5499,
-    price: 4499,
-    sku: "RMA-TH-23",
-    inventory: 12,
-    sizes: ["S", "M"],
-    category: "Jerseys",
-    collection: "La Liga",
-    image: "https://via.placeholder.com/150/080808/333333?text=RMA",
-    status: "Active",
-  }
-];
-
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  // 2. STATE MANAGEMENT
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState<"list" | "form">("list");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({});
 
-  // --- HANDLERS ---
+  // 3. FETCH DATA FROM SUPABASE
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching products:", error.message);
+    } else {
+      setProducts(data || []);
+    }
+    setIsLoading(false);
+  };
+
+  // Trigger the fetch when the page loads
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // --- HANDLERS (We will wire these up to the database next) ---
   const handleAddNew = () => {
     setEditingId(null);
-    setFormData({
-      status: "Draft",
-      sizes: [],
-      inventory: 0
-    });
+    setFormData({ status: "Draft", sizes: [], inventory: 0 });
     setView("form");
   };
 
@@ -93,37 +68,88 @@ export default function ProductsPage() {
     setView("form");
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-      setProducts(products.filter(p => p.id !== id));
+      // 1. Delete from Supabase
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error deleting product:", error.message);
+        alert("Failed to delete product: " + error.message);
+      } else {
+        // 2. Remove from local UI instantly
+        setProducts(products.filter(p => p.id !== id));
+      }
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      // Update existing
-      setProducts(products.map(p => p.id === editingId ? { ...p, ...formData } as Product : p));
-    } else {
-      // Create new
-      const newProduct: Product = {
-        ...(formData as Product),
-        id: `PROD-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      };
-      setProducts([newProduct, ...products]);
+    try {
+      if (editingId) {
+        // UPDATE EXISTING PRODUCT
+        const { error } = await supabase
+          .from("products")
+          .update({
+            name: formData.name,
+            description: formData.description,
+            mrp: formData.mrp,
+            price: formData.price,
+            sku: formData.sku,
+            inventory: formData.inventory,
+            sizes: formData.sizes,
+            category: formData.category,
+            collection: formData.collection,
+            image_url: formData.image_url,
+            status: formData.status
+          })
+          .eq("id", editingId);
+
+        if (error) throw error;
+      } else {
+        // CREATE NEW PRODUCT
+        const { error } = await supabase
+          .from("products")
+          .insert([{
+            name: formData.name,
+            description: formData.description,
+            mrp: formData.mrp,
+            price: formData.price,
+            sku: formData.sku,
+            inventory: formData.inventory,
+            sizes: formData.sizes,
+            category: formData.category,
+            collection: formData.collection,
+            image_url: formData.image_url,
+            status: formData.status || "Draft"
+          }]);
+
+        if (error) throw error;
+      }
+
+      // Refresh the table with the newest live data and return to list view
+      await fetchProducts();
+      setView("list");
+      
+    } catch (error: any) {
+      console.error("Error saving product:", error.message);
+      alert("Failed to save product: " + error.message);
     }
-    setView("list");
   };
 
   // --- FILTERING ---
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [products, searchQuery]);
 
+  // ... KEEP YOUR EXISTING RENDER CODE BELOW THIS LINE ...
   // --- RENDER: FORM VIEW ---
   if (view === "form") {
     return (
@@ -202,8 +228,8 @@ export default function ProductsPage() {
                   <label className="block text-xs text-gray-400 mb-1.5">Or paste image URL</label>
                   <input 
                     type="text" 
-                    value={formData.image || ""}
-                    onChange={(e) => setFormData({...formData, image: e.target.value})}
+                    value={formData.image_url || ""}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
                     placeholder="https://..."
                     className="w-full bg-[#080808] border border-white/10 rounded-md py-2 px-3 text-white text-sm focus:outline-none focus:border-[#FFD400]"
                   />
@@ -382,8 +408,8 @@ export default function ProductsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-black border border-white/10 rounded-md overflow-hidden flex-shrink-0">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        {product.image_url? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
                           <ImageIcon className="w-6 h-6 text-gray-500 m-auto mt-3" />
                         )}
